@@ -1,26 +1,120 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Nebula Indigo Light Mode */
+    --background: 240 25% 98%;
+    --foreground: 240 10% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+
+    --primary: 243 75% 59%;
+    /* Electric Indigo */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 243 75% 59%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Nebula Deep Space Dark Mode */
+    --background: 230 35% 7%;
+    /* Deep Void */
+    --foreground: 210 40% 98%;
+
+    --card: 230 35% 9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 230 35% 9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 250 80% 65%;
+    /* Vibrant Violet */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 230 25% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 230 25% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 230 25% 15%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 230 25% 15%;
+    --input: 230 25% 15%;
+    --ring: 250 80% 65%;
+  }
+
+
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-500 antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass-card {
+    @apply bg-background/50 backdrop-blur-md border border-primary/10 shadow-sm transition-all duration-300;
+  }
+
+  .glass-indigo {
+    @apply bg-background/60 backdrop-blur-2xl border-primary/10 border;
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+  }
+
+  .bg-mesh {
+    background-image: radial-gradient(at 0% 0%, hsla(243, 75%, 59%, 0.08) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(280, 80%, 60%, 0.03) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(230, 35%, 15%, 0.05) 0, transparent 50%);
+  }
+}
+
+/* Custom Leaflet Popups for Dark Mode/Glass Theme */
+.leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white !important;
+  border-radius: 12px !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+.leaflet-container {
+  font-family: inherit !important;
 }
