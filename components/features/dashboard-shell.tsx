@@ -12,7 +12,8 @@ import {
     Menu,
     X,
     Bell,
-    Search
+    Search,
+    Home
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,6 +26,7 @@ interface DashboardShellProps {
 }
 
 const menuItems = [
+    { name: "Home", icon: Home, href: "/" },
     { name: "Overview", icon: LayoutDashboard, href: "/dashboard/user" },
     { name: "Monitors", icon: ShieldCheck, href: "/dashboard/user/monitors" },
     { name: "History", icon: History, href: "/dashboard/user/history" },
@@ -43,14 +45,14 @@ export function DashboardShell({ children, userName }: DashboardShellProps) {
                 animate={{ width: isSidebarOpen ? 260 : 80 }}
                 className="relative z-50 flex flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl"
             >
-                <div className="p-6 flex items-center gap-3">
+                <Link href="/" className="p-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                         <ShieldCheck className="w-5 h-5 text-black" />
                     </div>
                     {isSidebarOpen && (
-                        <span className="font-black tracking-tighter text-xl italic uppercase">IDTrace</span>
+                        <span className="font-black tracking-tighter text-xl italic uppercase text-white">IDTrace</span>
                     )}
-                </div>
+                </Link>
 
                 <nav className="flex-1 px-4 py-8 space-y-2">
                     {menuItems.map((item) => {
