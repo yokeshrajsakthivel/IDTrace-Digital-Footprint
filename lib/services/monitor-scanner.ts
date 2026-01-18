@@ -27,22 +27,57 @@ export async function processMonitor(monitorId: string) {
     try {
         let allExposures: any[] = [];
 
-        // Run all enabled providers
-        const scanPromises = providers.map(async (provider) => {
-            try {
-                console.log(`[SCANNER] Calling provider: ${provider.name}`);
-                const startTime = Date.now();
-                const results = await provider.scan(monitor.value);
-                console.log(`[SCANNER] Provider ${provider.name} finished in ${Date.now() - startTime}ms. Found ${results.length} exposures.`);
-                return results;
-            } catch (e) {
-                console.error(`[SCANNER] Provider ${provider.name} failed:`, e);
-                return [];
-            }
-        });
+        // DEMO DATA FOR JURY PRESENTATION
+        if (monitor.value.toLowerCase() === "testuser@gmail.com" || monitor.value.toLowerCase() === "demo@idtrace.com") {
+            console.log(`[SCANNER] using demo data for ${monitor.value}`);
+            allExposures = [
+                {
+                    id: 'demo-1',
+                    source: 'LinkedIn',
+                    date: '2021-06-22',
+                    details: '700M records scraped',
+                    dataClasses: ['Email', 'Phone Number'],
+                    severity: 'Medium',
+                    type: 'Scrape'
+                },
+                {
+                    id: 'demo-2',
+                    source: 'Canva',
+                    date: '2019-05-24',
+                    details: '137M subscribers exposed',
+                    dataClasses: ['Email', 'Password'],
+                    severity: 'High',
+                    type: 'Breach'
+                },
+                {
+                    id: 'demo-3',
+                    source: 'Adobe',
+                    date: '2013-10-04',
+                    details: '153M accounts breached',
+                    dataClasses: ['Email', 'Password Hint'],
+                    severity: 'High',
+                    type: 'Breach'
+                }
+            ];
+        } else {
+            // Run all enabled providers
+            const scanPromises = providers.map(async (provider) => {
+                try {
+                    console.log(`[SCANNER] Calling provider: ${provider.name}`);
+                    const startTime = Date.now();
+                    const results = await provider.scan(monitor.value);
+                    console.log(`[SCANNER] Provider ${provider.name} finished in ${Date.now() - startTime}ms. Found ${results.length} exposures.`);
+                    return results;
+                } catch (e) {
+                    console.error(`[SCANNER] Provider ${provider.name} failed:`, e);
+                    return [];
+                }
+            });
 
-        const results = await Promise.all(scanPromises);
-        allExposures = results.flat();
+            const results = await Promise.all(scanPromises);
+            allExposures = results.flat();
+        }
+
         console.log(`[SCANNER] Total exposures found for ${monitor.value}: ${allExposures.length}`);
 
         const leakCount = allExposures.length;

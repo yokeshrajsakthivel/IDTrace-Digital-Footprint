@@ -4,7 +4,7 @@ import { ScanProvider } from "./base";
 
 export class IntelXAdapter implements ScanProvider {
     name = "IntelligenceX";
-    enabled = !!process.env.INTELX_API_KEY;
+    enabled = false; // process.env.INTELX_API_KEY; // Key invalid (401), disabling.
 
     async scan(email: string): Promise<Exposure[]> {
         if (!this.enabled || !process.env.INTELX_API_KEY) return [];

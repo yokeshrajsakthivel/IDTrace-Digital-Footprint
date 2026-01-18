@@ -38,16 +38,15 @@ export default function MapContent({ locations }: { locations: Location[] }) {
             {/* Optional: Dark overlay to make it fit theme better if needed, but keeping raw satellite as requested */}
 
             {locations.map((loc, i) => (
-                <CircleMarker
+                <Marker
                     key={i}
-                    center={[loc.lat, loc.lng]}
-                    pathOptions={{
-                        color: '#f43f5e',
-                        fillColor: '#f43f5e',
-                        fillOpacity: 0.6,
-                        weight: 1
-                    }}
-                    radius={Math.min(20, Math.max(5, loc.count / 2))}
+                    position={[loc.lat, loc.lng]}
+                    icon={L.divIcon({
+                        className: 'custom-pin',
+                        html: `<div class="breach-pin"></div>`,
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6]
+                    })}
                 >
                     <Popup className="glass-popup">
                         <div className="p-2 min-w-[150px]">
@@ -60,7 +59,7 @@ export default function MapContent({ locations }: { locations: Location[] }) {
                             </div>
                         </div>
                     </Popup>
-                </CircleMarker>
+                </Marker>
             ))}
         </MapContainer>
     );

@@ -9,6 +9,13 @@ export class DeHashedAdapter implements ScanProvider {
     async scan(email: string): Promise<Exposure[]> {
         if (!this.enabled || !process.env.DEHASHED_API_KEY) return [];
 
+        // DeHashed requires the account email as the username for Basic Auth
+        const emailUser = process.env.DEHASHED_USER;
+        if (!emailUser) {
+            console.warn("[DEHASHED] Missing DEHASHED_USER in .env.local. API request will likely fail (401/404).");
+            // We continue anyway as requested, but log the warning.
+        }
+
         try {
             // DeHashed standard is query=email:"email"
             const response = await axios.get("https://api.dehashed.com/search", {
@@ -34,8 +41,14 @@ export class DeHashedAdapter implements ScanProvider {
                 }));
             }
             return [];
-        } catch (error) {
-            console.error("DeHashed scan error:", error);
+        } catch (error: any) {
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 401) {
+                    console.log(`[DEHASHED] Skipped: API rejected credentials (Status ${error.response.status}).`);
+                    return [];
+                }
+            }
+            console.error("DeHashed scan error:", error.message);
             return [];
         }
     }

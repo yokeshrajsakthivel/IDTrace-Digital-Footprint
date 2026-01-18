@@ -17,17 +17,23 @@ interface Exposure {
     date: string;
     severity: string;
     dataClasses: string[];
+    details: string;
 }
 
 interface ScanResult {
-    email: string;
-    breaches: number;
-    exposures: Exposure[];
-    stats: {
-        scannedProviders: string[];
-        successProviders: string[];
-        failedProviders: string[];
-    };
+    score: number;
+    level: string;
+    summary: string;
+    details: {
+        email: string;
+        breaches: number;
+        exposures: Exposure[];
+        stats: {
+            scannedProviders: string[];
+            successProviders: string[];
+            failedProviders: string[];
+        };
+    }
 }
 
 function RadarLoader() {
@@ -98,6 +104,7 @@ function AnalyzeContent() {
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [selectedExposure, setSelectedExposure] = useState<Exposure | null>(null);
 
     useEffect(() => {
         if (!email) {
@@ -122,18 +129,6 @@ function AnalyzeContent() {
 
         runScan();
     }, [email]);
-
-    const calculateRiskScore = (res: ScanResult) => {
-        if (!res) return 100;
-        let score = 100;
-        res.exposures.forEach(exp => {
-            if (exp.severity === "Critical") score -= 15;
-            else if (exp.severity === "High") score -= 8;
-            else if (exp.severity === "Medium") score -= 4;
-            else score -= 1;
-        });
-        return Math.max(0, score);
-    };
 
     if (loading) {
         return (
@@ -182,13 +177,9 @@ function AnalyzeContent() {
         );
     }
 
-    const riskScore = calculateRiskScore(result);
-    const getRiskLabel = (score: number) => {
-        if (score < 30) return "CRITICAL";
-        if (score < 60) return "HIGH RISK";
-        if (score < 80) return "ELEVATED";
-        return "SECURE";
-    };
+    // USE BACKEND SCORE
+    const riskScore = result.score;
+    const riskLabel = result.level.toUpperCase();
 
     return (
         <div className="container mx-auto px-4 md:px-8 py-12 space-y-10 animate-in fade-in duration-700">
@@ -210,6 +201,83 @@ function AnalyzeContent() {
                 </Link>
             </div>
 
+            {/* Exposure Details Modal */}
+            <AnimatePresence>
+                {selectedExposure && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setSelectedExposure(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-[#0A0C10] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-6 space-y-6">
+                                <div className="flex items-start justify-between">
+                                    <div className="space-y-1">
+                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Exposure Source</div>
+                                        <h2 className="text-2xl font-bold text-foreground">{selectedExposure.source}</h2>
+                                    </div>
+                                    <div className={cn(
+                                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                        selectedExposure.severity === "Critical" ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                                            selectedExposure.severity === "High" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" :
+                                                "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                                    )}>
+                                        {selectedExposure.severity}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                            <Database className="w-3 h-3" /> Compromised Data
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedExposure.dataClasses.map((dc, i) => (
+                                                <span key={i} className="px-2 py-1 rounded bg-black/40 border border-white/10 text-xs font-mono text-primary/90">
+                                                    {dc}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Type</div>
+                                            <div className="text-sm font-semibold">{selectedExposure.type}</div>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date</div>
+                                            <div className="text-sm font-mono text-muted-foreground">{selectedExposure.date}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Intelligence Summary</div>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {selectedExposure.details}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end pt-2">
+                                    <Button onClick={() => setSelectedExposure(null)} variant="outline" className="border-white/10 hover:bg-white/5">
+                                        Close Details
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Visual Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left: Risk Characterization (4 Cols) */}
@@ -219,18 +287,18 @@ function AnalyzeContent() {
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Overall Security Index</span>
                             <h2 className="text-lg font-bold">Threat Assessment</h2>
                         </div>
-                        <RiskGauge value={riskScore} label={getRiskLabel(riskScore)} />
+                        <RiskGauge value={riskScore} label={riskLabel} />
                         <div className="w-full h-px bg-white/5" />
                         <p className="text-center text-xs text-muted-foreground leading-relaxed px-4">
-                            Based on correlated data from {result.stats.successProviders.length} global intelligence nodes.
+                            Based on correlated data from {result.details.stats.successProviders.length} global intelligence nodes.
                         </p>
                     </div>
 
                     {/* Summary Stats Grid */}
                     <div className="grid grid-cols-1 gap-4">
                         {[
-                            { label: "Data Breaches", value: result.breaches, icon: Database, color: "text-red-500" },
-                            { label: "Exposures", value: result.exposures.length, icon: Lock, color: "text-orange-500" }
+                            { label: "Data Breaches", value: result.details.breaches, icon: Database, color: "text-red-500" },
+                            { label: "Exposures", value: result.details.exposures.length, icon: Lock, color: "text-orange-500" }
                         ].map((stat, i) => (
                             <div key={i} className="glass-card p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
                                 <div className="flex items-center gap-4">
@@ -255,18 +323,19 @@ function AnalyzeContent() {
                             <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                                 <AlertTriangle className="w-4 h-4 text-orange-500" /> Intelligence Feed
                             </h3>
-                            <span className="text-[10px] text-muted-foreground">Found {result.exposures.length} distinct records</span>
+                            <span className="text-[10px] text-muted-foreground">Found {result.details.exposures.length} distinct records</span>
                         </div>
 
                         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {result.exposures.length > 0 ? (
-                                result.exposures.map((exp, i) => (
+                            {result.details.exposures.length > 0 ? (
+                                result.details.exposures.map((exp, i) => (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.05 }}
                                         key={i}
-                                        className="group flex flex-col md:flex-row md:items-center justify-between p-4 glass-card rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-default"
+                                        onClick={() => setSelectedExposure(exp)}
+                                        className="group flex flex-col md:flex-row md:items-center justify-between p-4 glass-card rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer active:scale-[0.99]"
                                     >
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-3">
@@ -313,7 +382,7 @@ function AnalyzeContent() {
                             <span className="text-[9px] font-mono text-muted-foreground uppercase">Live Trace</span>
                         </div>
                         <div className="h-[300px] relative">
-                            <LocationMap locations={[]} />
+                            <LocationMap locations={result.details.locations || []} />
                             <div className="absolute inset-0 pointer-events-none border-[12px] border-transparent shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
                         </div>
                     </div>

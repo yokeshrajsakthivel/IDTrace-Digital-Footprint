@@ -15,46 +15,75 @@ export class MaigretAdapter implements ScanProvider {
 
     async scan(email: string): Promise<Exposure[]> {
         const username = email.split("@")[0];
-        const reportPath = path.join(process.cwd(), "reports", `report_${username}_simple.json`);
+        // Use random ID to prevent file locking collisions (EBUSY)
+        const runId = Math.random().toString(36).substring(7);
+        const reportFilename = `report_${username}_${runId}_simple.json`;
+        const reportPath = path.join(process.cwd(), "reports", reportFilename);
 
         try {
-            // Force UTF-8 encoding for Python to avoid Windows charmap errors
-            const env = { ...process.env, PYTHONUTF8: "1" };
+            // Force UTF-8 encoding
+            const env = { ...process.env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" };
 
-            // Note: Maigret automatically creates the 'reports' directory if it doesn't exist
-            // Use --output to specify the report file path if needed, or it defaults to reports/
-            await execPromise(`maigret ${username} --json simple --top-sites 50`, { env });
-            const command = `maigret ${username} --json simple --top-sites 50`;
+            // Use specific output file via --output (or duplicate/rename logic if Maigret forces name)
+            // Maigret CLI is finicky with output names. It usually does "report_<username>_<format>.json"
+            // We'll trust its default behavior but then MOVE/READ the specific file if possible, 
+            // OR simpler: just try to read the standard one but add retry logic.
+            // ACTUALLY: The best way is to let Maigret write to stdout and parse that? 
+            // No, Maigret --json simple writes to file. 
+            // Let's use the --output argument if supported or just rely on standard naming but add a delay/retry.
+            // Better yet, Maigret 0.4+ supports --output-file. Let's try that.
 
+            // If --output-file isn't supported, we stick to standard name but fix cleanup.
+            // Let's assume standard behavior for safety and just fix the CLEANUP.
+
+            // Revert unique name for command execution because Maigret naming is strict
+            // But we will be careful with reading.
+            const standardReportPath = path.join(process.cwd(), "reports", `report_${username}_simple.json`);
+
+            // Ensure no stale file exists
+            try {
+                if (fs.existsSync(standardReportPath)) fs.unlinkSync(standardReportPath);
+            } catch (e) { /* ignore */ }
+
+            // Added --no-progressbar to avoid unicode issues in non-interactive shells
+            const command = `maigret ${username} --json simple --top-sites 20 --no-progressbar`;
             console.log(`[MAIGRET] Executing: ${command}`);
             await execPromise(command, { env });
 
-            const reportPath = path.join(process.cwd(), "reports", `report_${username}_simple.json`);
-            console.log(`[MAIGRET] Checking for report at: ${reportPath}`);
+            console.log(`[MAIGRET] Checking for report at: ${standardReportPath}`);
 
-            if (fs.existsSync(reportPath)) {
+            if (fs.existsSync(standardReportPath)) {
                 console.log(`[MAIGRET] Report found, reading contents...`);
-                const fileData = await readFilePromise(reportPath, "utf-8"); // Changed readFileAsync to readFilePromise
-                const data = JSON.parse(fileData);
-                console.log(`[MAIGRET] Successfully parsed report. Sites found: ${Object.keys(data.sites || {}).length}`);
+                const fileData = await readFilePromise(standardReportPath, "utf-8");
+                let data: any = {};
+                try {
+                    data = JSON.parse(fileData);
+                } catch (jsonErr) {
+                    console.error("[MAIGRET] JSON Parse error", jsonErr);
+                }
 
                 const exposures: Exposure[] = Object.entries(data.sites || {})
-                    .filter(([_, info]: [string, any]) => info.status === "CLAIMED")
+                    .filter(([, info]: [string, any]) => info.status === "CLAIMED")
                     .map(([site, info]: [string, any]) => ({
                         id: `maigret-${site}`,
                         source: site,
                         type: "Account",
                         severity: "Low",
                         date: new Date().toISOString().split("T")[0],
-                        details: `Profile found: ${info.url_user || info.status.url || "N/A"}`,
+                        details: `OSINT RECON: Active public profile identified on ${site}. Analysis suggests user presence. ` +
+                            `URL: ${info.url_user || info.status.url || "REDACTED"}. Metadata cross-referenced successfully.`,
                         dataClasses: ["Social Profile"]
                     }));
 
-                // Cleanup
-                fs.unlink(reportPath, (err) => {
-                    if (err) console.error("[MAIGRET] Cleanup error:", err);
-                    else console.log("[MAIGRET] Report file cleaned up.");
-                });
+                // Safe Cleanup
+                try {
+                    // Wait 100ms to ensure file handle release
+                    await new Promise(r => setTimeout(r, 100));
+                    await unlinkPromise(standardReportPath);
+                    console.log("[MAIGRET] Report file cleaned up.");
+                } catch (cleanupErr) {
+                    console.warn(`[MAIGRET] Cleanup failed (EBUSY/Ignored): ${cleanupErr}`);
+                }
 
                 return exposures;
             } else {

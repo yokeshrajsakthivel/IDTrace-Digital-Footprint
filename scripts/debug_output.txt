@@ -1,0 +1,17 @@
+=== ADAPTER DIAGNOSTIC TOOL (FULL) ===
+
+[1/4] Testing LeakCheck PUBLIC Adapter...
+Connecting to LeakCheck PUBLIC API...
+✅ LEAKCHECK PUBLIC SUCCESS: Connection established.
+
+[2/4] Skipping IntelX (Failed Key)...
+
+[3/4] Maigret verified via file system already.
+
+[4/4] Testing DeHashed Adapter...
+Connecting to DeHashed API with user: summaa.445@gmail.com...
+❌ DEHASHED ERROR: HTTP Request failed
+Status: 404
+Data: {"message":"Need Help? Visit https://app.dehashed.com/documentation/api"}
+
+=== DIAGNOSIS COMPLETE ===
