@@ -20,6 +20,13 @@ interface Exposure {
     details: string;
 }
 
+interface Location {
+    country: string;
+    lat: number;
+    lng: number;
+    count: number;
+}
+
 interface ScanResult {
     score: number;
     level: string;
@@ -28,6 +35,7 @@ interface ScanResult {
         email: string;
         breaches: number;
         exposures: Exposure[];
+        locations?: Location[];
         stats: {
             scannedProviders: string[];
             successProviders: string[];
