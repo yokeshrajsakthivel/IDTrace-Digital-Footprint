@@ -10,13 +10,22 @@ import Link from "next/link";
 import { FingerprintIcon } from "@/components/icons";
 import { Shield, Zap } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { GoogleLoginButton } from "@/components/google-login-button";
 // import { signIn } from "next-auth/react";
+import { useEffect } from "react";
 
 export default function SignupPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (searchParams.get("error") === "account_not_found") {
+            setError("No account found. Please create an account to continue.");
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -73,8 +82,19 @@ export default function SignupPage() {
                         </p>
                     </div>
 
-                    {/* Registration Form */}
                     <div className="glass-card p-8 rounded-2xl shadow-sm border-border/50">
+                        <div className="mb-6 space-y-4">
+                            <GoogleLoginButton mode="signup" />
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t border-border" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background/50 px-2 text-muted-foreground backdrop-blur-md">Or continue with</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">

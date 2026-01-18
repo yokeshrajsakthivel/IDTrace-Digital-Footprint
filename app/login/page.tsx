@@ -12,6 +12,7 @@ import { Shield, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { GoogleLoginButton } from "@/components/google-login-button";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -68,8 +69,19 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Login Form */}
                     <div className="glass-card p-8 rounded-2xl shadow-sm border-border/50">
+                        <div className="mb-6 space-y-4">
+                            <GoogleLoginButton mode="login" />
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t border-border" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background/50 px-2 text-muted-foreground backdrop-blur-md">Or continue with</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-sm font-medium">Email</Label>
