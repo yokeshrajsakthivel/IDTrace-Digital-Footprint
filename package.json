@@ -10,18 +10,21 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/react": "^3.0.44",
     "@auth/core": "^0.41.1",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.10.2",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@types/leaflet": "^1.9.21",
+    "ai": "^6.0.42",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.27.5",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "next": "15.1.9",
@@ -32,7 +35,8 @@
     "react-dom": "19.0.0",
     "react-leaflet": "^5.0.0",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^20",

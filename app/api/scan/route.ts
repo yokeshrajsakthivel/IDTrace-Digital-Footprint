@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     // DEMO DATA FOR JURY PRESENTATION
     if (email.toLowerCase() === "testuser@gmail.com" || email.toLowerCase() === "demo@idtrace.com") {
-        const demoExposures = [
+        const demoExposures: any[] = [
             {
                 id: 'demo-1',
                 source: 'LinkedIn',
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     // CONTROLLED TEST CASE: 1 Breach (Score should be ~75)
     if (email.toLowerCase() === "moderate@idtrace.com") {
-        const singleExpo = [{
+        const singleExpo: any[] = [{
             id: 'test-1',
             source: 'Adobe',
             date: '2013-10-04',
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     // CONTROLLED TEST CASE: 3 Breaches (Score should be ~40-50)
     if (email.toLowerCase() === "risky@idtrace.com") {
-        const tripleExpo = [
+        const tripleExpo: any[] = [
             { id: 't-1', source: 'LinkedIn', date: '2012', details: 'Test 1', dataClasses: ['Email'], severity: 'Low', type: 'Breach' },
             { id: 't-2', source: 'Canva', date: '2019', details: 'Test 2', dataClasses: ['Email'], severity: 'Medium', type: 'Breach' },
             { id: 't-3', source: 'Twitter', date: '2022', details: 'Test 3', dataClasses: ['Email'], severity: 'Medium', type: 'Scrape' }
@@ -159,7 +159,10 @@ export async function GET(req: NextRequest) {
                     existing.dataClasses = Array.from(new Set([...existing.dataClasses, ...exp.dataClasses]));
                     // Take the most severe type
                     const severityOrder = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
-                    if (severityOrder[exp.severity as keyof typeof severityOrder] > severityOrder[existing.severity as keyof typeof severityOrder]) {
+                    const currentSev = exp.severity as 'Critical' | 'High' | 'Medium' | 'Low';
+                    const existingSev = existing.severity as 'Critical' | 'High' | 'Medium' | 'Low';
+
+                    if ((severityOrder[currentSev] || 0) > (severityOrder[existingSev] || 0)) {
                         existing.severity = exp.severity;
                     }
                 } else {

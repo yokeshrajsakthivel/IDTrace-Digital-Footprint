@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { RiskGauge } from "@/components/features/risk-gauge";
 import { LocationMap } from "@/components/features/location-map";
-import { Shield, AlertTriangle, CheckCircle2, Globe, ShieldAlert, Database, Lock, Loader2, ArrowLeft } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Globe, ShieldAlert, Database, Lock, Loader2, ArrowLeft, Sparkles as GenerateIcon, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,36 @@ function AnalyzeContent() {
 
         runScan();
     }, [email]);
+
+    // AI Analysis Effect
+    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+    const [mitigationPlan, setMitigationPlan] = useState<string[]>([]);
+    const [analyzingRisk, setAnalyzingRisk] = useState(false);
+
+    useEffect(() => {
+        if (result && !aiAnalysis) {
+            setAnalyzingRisk(true);
+            import("@/app/actions/analyze-risk").then(({ generateRiskAnalysis }) => {
+                // Pass relevant parts of the result to save bandwidth/tokens
+                const analysisData = {
+                    score: result.score,
+                    level: result.level,
+                    breaches: result.details.breaches,
+                    exposures: result.details.exposures.slice(0, 10) // Limit to top 10 for analysis
+                };
+                generateRiskAnalysis(analysisData).then(res => {
+                    setAiAnalysis(res.analysis);
+                    setAnalyzingRisk(false);
+                });
+
+                import("@/app/actions/analyze-risk").then(({ generateMitigationPlan }) => {
+                    generateMitigationPlan(result.level, result.details.exposures.slice(0, 5)).then(plan => {
+                        setMitigationPlan(plan);
+                    });
+                });
+            });
+        }
+    }, [result, aiAnalysis]);
 
     if (loading) {
         return (
@@ -302,6 +332,25 @@ function AnalyzeContent() {
                         </p>
                     </div>
 
+                    {/* AI Analysis Card */}
+                    <div className="glass-card p-6 rounded-2xl border border-primary/20 bg-primary/5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] rounded-full -mr-16 -mt-16" />
+                        <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <GenerateIcon className="w-3 h-3" /> AI Risk Insight
+                        </h3>
+                        {analyzingRisk ? (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Analyzing breach context...
+                            </div>
+                        ) : (
+                            <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+                                {aiAnalysis || "Analysis unavailable."}
+                            </p>
+                        )}
+                    </div>
+
+
+
                     {/* Summary Stats Grid */}
                     <div className="grid grid-cols-1 gap-4">
                         {[
@@ -394,6 +443,23 @@ function AnalyzeContent() {
                             <div className="absolute inset-0 pointer-events-none border-[12px] border-transparent shadow-[inset_0_0_80px_rgba(0,0,0,0.6)]" />
                         </div>
                     </div>
+
+                    {/* AI Mitigation Card */}
+                    {mitigationPlan.length > 0 && (
+                        <div className="glass-card p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">
+                            <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <Shield className="w-3 h-3" /> Recommended Actions
+                            </h3>
+                            <ul className="space-y-3">
+                                {mitigationPlan.map((step, i) => (
+                                    <li key={i} className="flex gap-3 text-sm text-foreground/90 leading-snug">
+                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[10px] font-bold border border-emerald-500/20">{i + 1}</span>
+                                        {step}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 

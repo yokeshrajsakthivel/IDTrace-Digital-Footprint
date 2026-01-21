@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ArVrBackground } from "@/components/arvr-background";
 import { auth } from "@/auth";
+import { SecurityBot } from "@/components/features/security-bot";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default async function RootLayout({
           session={session}
         >
           <ArVrBackground />
+          <SecurityBot />
           {children}
         </Providers>
       </body>

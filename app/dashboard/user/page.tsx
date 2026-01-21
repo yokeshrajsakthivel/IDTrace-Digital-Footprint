@@ -15,6 +15,7 @@ import {
     Zap
 } from "lucide-react";
 import Link from "next/link";
+import { ActionPlan } from "@/components/features/action-plan";
 
 export default async function UserDashboard() {
     const session = await auth();
@@ -80,6 +81,9 @@ export default async function UserDashboard() {
                         ))}
                     </div>
                 </div>
+
+                {/* AI Action Plan Section */}
+                <ActionPlan monitors={monitors.map((m: any) => ({ value: m.value, type: m.type }))} />
 
                 {/* Monitored Assets Section */}
                 <div className="space-y-6">
