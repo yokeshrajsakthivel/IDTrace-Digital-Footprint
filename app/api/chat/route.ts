@@ -7,9 +7,7 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    // Debug: Check if API Key is configured (do not log the key itself)
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      console.error("ERROR: GOOGLE_GENERATIVE_AI_API_KEY is missing in environment variables.");
       return new Response("Configuration Error: API Key missing", { status: 500 });
     }
 
@@ -29,19 +27,10 @@ export async function POST(req: Request) {
     `,
     });
 
-    // Debug: Log success
-    // console.log("AI Stream started successfully");
-
-    // Use toUIMessageStreamResponse to return a stream compatible with useChat
-    // Note: We cast to any because TS definitions might be slightly out of sync in this env, 
-    // but the method exists in the checked d.ts file.
-    if (typeof (result as any).toUIMessageStreamResponse === 'function') {
-      return (result as any).toUIMessageStreamResponse();
-    }
-
-    // Fallback if method is missing (unlikely given d.ts verification)
-    console.warn("toUIMessageStreamResponse missing, falling back to text stream");
+    // SIMPLE METHOD: Return raw text stream.
+    // No protocols, no envelopes, just pure text chunks.
     return result.toTextStreamResponse();
+
   } catch (error) {
     console.error("Chat API Error:", error);
     return new Response("Internal Server Error", { status: 500 });

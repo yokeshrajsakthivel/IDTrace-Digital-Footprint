@@ -1,6 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +7,22 @@ import { MessageSquare, X, Send, Shield, User, Loader2, Bot } from "lucide-react
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Simple message type for our manual implementation
+type Message = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+};
+
 export function SecurityBot() {
     const [isOpen, setIsOpen] = useState(false);
-    // Explicitly cast to any to bypass type definition issues in @ai-sdk/react v3
-    // Explicitly cast to any to bypass type definition issues in @ai-sdk/react v3
-    const chatHelpers = useChat() as any;
-    const { messages, status, sendMessage } = chatHelpers;
-    const [input, setInput] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Derive isLoading from status
-    const isLoading = status === "submitted" || status === "streaming";
+    // SIMPLE METHOD: Manage state manually without useChat hook
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
@@ -26,11 +30,62 @@ export function SecurityBot() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        if (!input.trim() || isLoading) return;
 
-        // Optimistically add user message and trigger stream
-        await sendMessage({ role: 'user', content: input });
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: input
+        };
+
+        // Optimistically add user message
+        setMessages(prev => [...prev, userMessage]);
         setInput("");
+        setIsLoading(true);
+
+        try {
+            // SIMPLE METHOD: Standard fetch request
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [...messages, userMessage] // send context
+                })
+            });
+
+            if (!response.ok) throw new Error("Network response was not ok");
+            if (!response.body) throw new Error("No response body");
+
+            // Prepare placeholder for AI response
+            const aiMessageId = (Date.now() + 1).toString();
+            setMessages(prev => [...prev, { id: aiMessageId, role: 'assistant', content: "" }]);
+
+            // Create a reader to read the stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            let accumulatedContent = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                accumulatedContent += chunk;
+
+                // Update the last message (AI's message) with new content
+                setMessages(prev => prev.map(msg =>
+                    msg.id === aiMessageId ? { ...msg, content: accumulatedContent } : msg
+                ));
+            }
+
+        } catch (error) {
+            console.error("Chat Error:", error);
+            // Optional: Add error message to chat
+            setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please try again." }]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Auto-scroll to bottom of chat
@@ -80,7 +135,7 @@ export function SecurityBot() {
                                 </div>
                             )}
 
-                            {messages.map((m: any) => (
+                            {messages.map((m) => (
                                 <div
                                     key={m.id}
                                     className={cn(
@@ -142,21 +197,53 @@ export function SecurityBot() {
                 )}
             </AnimatePresence>
 
-            {/* Toggle Button */}
+            {/* Animated Robot Launcher */}
             <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto shadow-2xl shadow-primary/20 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center border-4 border-[#02040a] relative group"
+                className="pointer-events-auto relative group flex items-center justify-center w-16 h-16"
             >
-                {isOpen ? (
-                    <X className="w-6 h-6" />
-                ) : (
+                {/* Radar Ripple Effect */}
+                {!isOpen && (
                     <>
-                        <MessageSquare className="w-6 h-6" />
-                        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#02040a]" />
+                        <motion.div
+                            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                            className="absolute inset-0 rounded-full bg-primary/20 border border-primary/30 z-0"
+                        />
+                        <motion.div
+                            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
+                            className="absolute inset-0 rounded-full bg-primary/20 z-0"
+                        />
                     </>
                 )}
+
+                {/* Core Container */}
+                <div className={cn(
+                    "relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-[0_0_30px_rgba(var(--primary),0.5)]",
+                    isOpen
+                        ? "bg-[#0A0C10] border-2 border-white/20 rotate-90"
+                        : "bg-primary border-2 border-white/20 rotate-0"
+                )}>
+                    {/* Inner Tech Ring (Decorative) */}
+                    <div className="absolute inset-1 rounded-full border border-dashed border-white/30 animate-[spin_10s_linear_infinite]" />
+
+                    {isOpen ? (
+                        <X className="w-6 h-6 text-white" />
+                    ) : (
+                        <Bot className="w-7 h-7 text-primary-foreground fill-white" />
+                    )}
+
+                    {/* Online Dot */}
+                    {!isOpen && (
+                        <span className="absolute top-0 right-0 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-[#02040a]"></span>
+                        </span>
+                    )}
+                </div>
             </motion.button>
         </div>
     );
