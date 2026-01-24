@@ -11,7 +11,7 @@ import { cookies } from "next/headers";
 export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
     adapter: PrismaAdapter(db) as any, // Cast to any to resolve version mismatch between @auth/core and next-auth beta
-    session: { strategy: "jwt" },
+    session: { strategy: "jwt", maxAge: 30 * 60 }, // 30 minutes session expiry
     callbacks: {
         async signIn({ user, account }) {
             // Allow OAuth logic check
