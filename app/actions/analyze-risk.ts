@@ -52,31 +52,51 @@ export async function generateRiskAnalysis(details: RiskAnalysisDetails) {
 }
 
 export async function generateMitigationPlan(level: string, exposures: any[]) {
+    console.log(`[AI Mitigation] Generating plan for ${exposures.length} exposures. Risk Level: ${level}`);
+
     try {
+        const exposureNames = exposures.map(e => e.source).join(", ");
         const prompt = `
-      You are a security consultant.
-      User Risk Level: ${level}
-      Exposures: ${JSON.stringify(exposures.map(e => e.source))}
+      You are an expert security consultant for a user with Risk Level: ${level}.
       
-      Provide 3 specific, actionable mitigation steps.
+      Their data appeared in these specific breaches: ${exposureNames}
+      
+      Task:
+      Generate 3 highly specific, actionable mitigation steps TAILORED to these specific breaches.
+      - If "Adobe" is listed, mention password reuse.
+      - If "LinkedIn" is listed, mention business email security.
+      - If "Gravatar" is listed, mention public profile scrubbing.
+      
       Format as a JSON array of strings.
       Example: ["step 1", "step 2", "step 3"]
       Do not include markdown formatting.
     `;
+
+        console.log(`[AI Mitigation] Prompt sent: ${prompt.substring(0, 100)}...`);
 
         const { text } = await generateText({
             model: aiModel,
             prompt: prompt,
         });
 
+        console.log(`[AI Mitigation] Raw AI response: ${text}`);
+
         // specific parsing to ensure array
         try {
             const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(cleanText);
+            const parsed = JSON.parse(cleanText);
+            console.log(`[AI Mitigation] Successfully parsed JSON.`);
+            return parsed;
         } catch (e) {
+            console.error(`[AI Mitigation] JSON parse failed. Returning raw text as single item.`);
             return [text]; // Fallback if not proper JSON
         }
     } catch (error) {
-        return ["Enable 2FA on all accounts immediately.", "Change passwords for exposed services.", "Monitor bank statements for suspicious activity."];
+        console.error('[AI Mitigation] API Call Failed:', error);
+        return [
+            "Enable 2FA on all accounts immediately (Fallback Recommendation).",
+            "Change passwords for exposed services (Fallback Recommendation).",
+            "Monitor bank statements for suspicious activity (Fallback Recommendation)."
+        ];
     }
 }
