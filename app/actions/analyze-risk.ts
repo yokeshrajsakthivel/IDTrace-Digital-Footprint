@@ -100,3 +100,35 @@ export async function generateMitigationPlan(level: string, exposures: any[]) {
         ];
     }
 }
+
+export async function generateExposureSummary(exposure: { source: string, type: string, dataClasses: string[], details: string }) {
+    try {
+        const prompt = `
+            You are a helpful cybersecurity assistant explaining a data breach to a non-technical user.
+            
+            Breach Source: ${exposure.source}
+            Type: ${exposure.type}
+            Compromised Data: ${exposure.dataClasses.join(", ")}
+            Technical Details: ${exposure.details}
+
+            Task:
+            Write a SHORT, CLEAR summary (max 2 sentences) explaining what this means for the user.
+            - Avoid jargon.
+            - Explain the risk (e.g., "Attackers could use this to log into your other accounts").
+            - Be reassuring but realistic.
+            
+            Example output:
+            "This breach exposed your password and email, which could allow hackers to access your account. You should change your password immediately."
+        `;
+
+        const { text } = await generateText({
+            model: aiModel,
+            prompt: prompt,
+        });
+
+        return { summary: text };
+    } catch (error) {
+        console.error('AI Exposure Summary failed:', error);
+        return { summary: "Summary unavailable. Please review the technical details below." };
+    }
+}

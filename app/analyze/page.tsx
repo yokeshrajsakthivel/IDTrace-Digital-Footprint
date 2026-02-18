@@ -168,6 +168,28 @@ function AnalyzeContent() {
         }
     }, [result, aiAnalysis]);
 
+    // Exposure Summary AI
+    const [exposureSummary, setExposureSummary] = useState<string | null>(null);
+    const [loadingSummary, setLoadingSummary] = useState(false);
+
+    useEffect(() => {
+        if (selectedExposure) {
+            setLoadingSummary(true);
+            setExposureSummary(null);
+            import("@/app/actions/analyze-risk").then(({ generateExposureSummary }) => {
+                generateExposureSummary({
+                    source: selectedExposure.source,
+                    type: selectedExposure.type,
+                    dataClasses: selectedExposure.dataClasses,
+                    details: selectedExposure.details
+                }).then(res => {
+                    setExposureSummary(res.summary);
+                    setLoadingSummary(false);
+                });
+            });
+        }
+    }, [selectedExposure]);
+
     if (loading) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center space-y-12 p-6 min-h-[70vh]">
@@ -222,13 +244,13 @@ function AnalyzeContent() {
     return (
         <div className="container mx-auto px-4 md:px-8 py-12 space-y-10 animate-in fade-in duration-700">
             {/* Top Navigation / Breadcrumb Area */}
-            <div className="flex items-center justify-between border-b border-white/5 pb-6">
+            <div className="flex items-center justify-between border-b border-border/40 pb-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Neural Status :: Active</span>
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-foreground">
                         Identity Intelligence <span className="text-muted-foreground font-normal text-sm">/ {email}</span>
                     </h1>
                 </div>
@@ -253,7 +275,7 @@ function AnalyzeContent() {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-[#0A0C10] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden"
+                            className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="p-6 space-y-6">
@@ -273,13 +295,30 @@ function AnalyzeContent() {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                    {/* AI Summary Section */}
+                                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-2 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 blur-[40px] rounded-full -mr-12 -mt-12" />
+                                        <div className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                                            <GenerateIcon className="w-3 h-3" /> Intelligent Analysis
+                                        </div>
+                                        <div className="text-sm text-foreground/90 leading-relaxed font-medium min-h-[60px]">
+                                            {loadingSummary ? (
+                                                <div className="flex items-center gap-2 text-muted-foreground h-full">
+                                                    <Loader2 className="w-4 h-4 animate-spin" /> Analyzing exposure impact...
+                                                </div>
+                                            ) : (
+                                                exposureSummary || "Analysis unavailable."
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
                                         <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                             <Database className="w-3 h-3" /> Compromised Data
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             {selectedExposure.dataClasses.map((dc, i) => (
-                                                <span key={i} className="px-2 py-1 rounded bg-black/40 border border-white/10 text-xs font-mono text-primary/90">
+                                                <span key={i} className="px-2 py-1 rounded bg-background/80 border border-border text-xs font-mono text-primary/90">
                                                     {dc}
                                                 </span>
                                             ))}
@@ -287,26 +326,26 @@ function AnalyzeContent() {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                                        <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-1">
                                             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Type</div>
                                             <div className="text-sm font-semibold">{selectedExposure.type}</div>
                                         </div>
-                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                                        <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-1">
                                             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date</div>
                                             <div className="text-sm font-mono text-muted-foreground">{selectedExposure.date}</div>
                                         </div>
                                     </div>
 
-                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Intelligence Summary</div>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                    <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
+                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Technical Details</div>
+                                        <p className="text-xs text-muted-foreground leading-relaxed font-mono">
                                             {selectedExposure.details}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="flex justify-end pt-2">
-                                    <Button onClick={() => setSelectedExposure(null)} variant="outline" className="border-white/10 hover:bg-white/5">
+                                    <Button onClick={() => setSelectedExposure(null)} variant="outline" className="border-border hover:bg-muted">
                                         Close Details
                                     </Button>
                                 </div>
@@ -320,13 +359,13 @@ function AnalyzeContent() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left: Risk Characterization (4 Cols) */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="glass-card p-8 rounded-3xl border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center space-y-6">
+                    <div className="glass-card p-8 rounded-3xl border border-border/40 bg-card/40 flex flex-col items-center justify-center space-y-6">
                         <div className="text-center space-y-1">
                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Overall Security Index</span>
                             <h2 className="text-lg font-bold">Threat Assessment</h2>
                         </div>
                         <RiskGauge value={riskScore} label={riskLabel} />
-                        <div className="w-full h-px bg-white/5" />
+                        <div className="w-full h-px bg-border/40" />
                         <p className="text-center text-xs text-muted-foreground leading-relaxed px-4">
                             Based on correlated data from {result.details.stats.successProviders.length} global intelligence nodes.
                         </p>
@@ -357,9 +396,9 @@ function AnalyzeContent() {
                             { label: "Data Breaches", value: result.details.breaches, icon: Database, color: "text-red-500" },
                             { label: "Exposures", value: result.details.exposures.length, icon: Lock, color: "text-orange-500" }
                         ].map((stat, i) => (
-                            <div key={i} className="glass-card p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+                            <div key={i} className="glass-card p-5 rounded-2xl border border-border/40 bg-card/40">
                                 <div className="flex items-center gap-4">
-                                    <div className={cn("p-2.5 rounded-xl bg-background border border-white/5", stat.color)}>
+                                    <div className={cn("p-2.5 rounded-xl bg-background border border-border/40", stat.color)}>
                                         <stat.icon className="w-4 h-4" />
                                     </div>
                                     <div>
@@ -392,7 +431,7 @@ function AnalyzeContent() {
                                         transition={{ delay: i * 0.05 }}
                                         key={i}
                                         onClick={() => setSelectedExposure(exp)}
-                                        className="group flex flex-col md:flex-row md:items-center justify-between p-4 glass-card rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer active:scale-[0.99]"
+                                        className="group flex flex-col md:flex-row md:items-center justify-between p-4 glass-card rounded-2xl border border-border/40 bg-card/40 hover:bg-muted/30 hover:border-border transition-all cursor-pointer active:scale-[0.99]"
                                     >
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-3">
@@ -408,7 +447,7 @@ function AnalyzeContent() {
                                             </div>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {exp.dataClasses.map((dc, j) => (
-                                                    <span key={j} className="text-[8px] font-bold text-muted-foreground/80 bg-white/5 px-2 py-0.5 rounded uppercase tracking-tighter">
+                                                    <span key={j} className="text-[8px] font-bold text-muted-foreground/80 bg-muted/40 px-2 py-0.5 rounded uppercase tracking-tighter">
                                                         {dc}
                                                     </span>
                                                 ))}
@@ -421,7 +460,7 @@ function AnalyzeContent() {
                                     </motion.div>
                                 ))
                             ) : (
-                                <div className="p-16 text-center glass-card rounded-3xl border border-white/5 bg-white/[0.01]">
+                                <div className="p-16 text-center glass-card rounded-3xl border border-border/40 bg-card/40">
                                     <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-4" />
                                     <h3 className="text-base font-bold">Safe Horizon</h3>
                                     <p className="text-muted-foreground text-xs max-w-xs mx-auto mt-2">No known exposures were identified on this identifier across premium intelligence nodes.</p>
@@ -431,8 +470,8 @@ function AnalyzeContent() {
                     </div>
 
                     {/* Integrated Map - Moved Inside this Column */}
-                    <div className="glass-card rounded-3xl border border-white/10 bg-white/[0.02] overflow-hidden w-full">
-                        <div className="px-6 py-4 flex items-center justify-between border-b border-white/5">
+                    <div className="glass-card rounded-3xl border border-border/40 bg-card/40 overflow-hidden w-full">
+                        <div className="px-6 py-4 flex items-center justify-between border-b border-border/40">
                             <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                                 <Globe className="w-4 h-4 text-primary" /> Origin Attribution Map
                             </h3>
@@ -492,11 +531,11 @@ function AnalyzeContent() {
 
 export default function AnalyzePage() {
     return (
-        <div className="min-h-screen flex flex-col bg-[#02040a]">
-            {/* Fine Grid Background Overlay */}
-            <div className="fixed inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50" />
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03]"
-                style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`, backgroundSize: '24px 24px' }}
+        <div className="min-h-screen flex flex-col bg-background transition-colors duration-500">
+            {/* Fine Grid Background Overlay - Adaptive to theme */}
+            <div className="fixed inset-0 pointer-events-none opacity-20 dark:brightness-50 brightness-95 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="fixed inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.03] bg-foreground/5"
+                style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '24px 24px' }}
             />
 
             <Navbar />
